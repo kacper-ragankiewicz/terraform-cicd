@@ -1,20 +1,18 @@
-FROM node:lts
-
-# Set working directory
+FROM node:lts AS builder
 WORKDIR /home/node/app
-
-# Copy package.json and install dependencies
-COPY --chown=node:node package.json package-lock.json ./
+COPY package.json package-lock.json ./
 RUN npm ci --quiet
+COPY . .
+RUN npm run build --configuration=production
 
-# Copy the remaining project files
-COPY --chown=node:node . .
+# Use Nginx to serve the Angular app
+FROM nginx:alpine
 
-# Set user to non-root for security
-USER node
+# Copy built Angular files
+COPY --from=builder /home/node/app/dist/front/browser /usr/share/nginx/html
 
-# Expose the Angular default port
-EXPOSE 4200
+# Copy custom Nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Start the application
-CMD ["npm", "start"]
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
