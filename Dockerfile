@@ -1,6 +1,7 @@
 FROM node:lts AS builder
 WORKDIR /home/node/app
 COPY package.json package-lock.json ./
+RUN npm cache clean --force
 RUN npm ci --quiet
 COPY . .
 RUN npm run build --configuration=production
